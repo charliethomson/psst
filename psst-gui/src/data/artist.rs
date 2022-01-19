@@ -13,11 +13,19 @@ pub struct ArtistDetail {
     pub related_artists: Promise<Cached<Vector<Artist>>, ArtistLink>,
 }
 
-#[derive(Clone, Data, Lens, Deserialize)]
+#[derive(Clone, Data, Lens, Deserialize, Serialize)]
+pub struct ArtistFollowerCount {
+    // Per spotify api docs, 'href' will always be null
+    href: Option<String>,
+    pub total: usize,
+}
+
+#[derive(Clone, Data, Lens, Deserialize, Serialize)]
 pub struct Artist {
     pub id: Arc<str>,
     pub name: Arc<str>,
     pub images: Vector<Image>,
+    pub followers: ArtistFollowerCount,
 }
 
 impl Artist {

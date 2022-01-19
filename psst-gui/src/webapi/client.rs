@@ -394,7 +394,7 @@ impl WebApi {
 
     // https://developer.spotify.com/documentation/web-api/reference/#endpoint-get-playlist
     pub fn get_playlist(&self, id: &str) -> Result<Playlist, Error> {
-        let request = self.get(format!("v1/me/playlists/{}", id))?;
+        let request = self.get(format!("v1/playlists/{}", id))?;
         let result = self.load(request)?;
         Ok(result)
     }
