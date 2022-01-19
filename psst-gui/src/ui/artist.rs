@@ -2,14 +2,16 @@ use druid::{
     im::Vector,
     kurbo::Circle,
     widget::{CrossAxisAlignment, Flex, Label, LabelText, LineBreaking, List},
-    Data, Insets, LensExt, LocalizedString, Menu, MenuItem, Selector, Widget, WidgetExt,
+    Data, Insets, LensExt, LocalizedString, Menu, MenuItem, Selector, Size, Widget, WidgetExt,
 };
+
+use std::sync::Arc;
 
 use crate::{
     cmd,
     data::{
-        AppState, Artist, ArtistAlbums, ArtistDetail, ArtistLink, ArtistTracks, Cached, Ctx, Nav,
-        WithCtx,
+        AppState, Artist, ArtistAlbums, ArtistDetail, ArtistFollowerCount, ArtistLink,
+        ArtistTracks, Cached, Ctx, Nav, WithCtx,
     },
     webapi::WebApi,
     widget::{Async, MyWidgetExt, RemoteImage},
@@ -26,9 +28,57 @@ pub const LOAD_DETAIL: Selector<ArtistLink> = Selector::new("app.artist.load-det
 
 pub fn detail_widget() -> impl Widget<AppState> {
     Flex::column()
+        .with_child(async_artist_info_widget())
         .with_child(async_top_tracks_widget())
         .with_child(async_albums_widget().padding((theme::grid(1.0), 0.0)))
         .with_child(async_related_widget().padding((theme::grid(1.0), 0.0)))
+}
+fn rounded_cover_widget(size: f64) -> impl Widget<Artist> {
+    RemoteImage::new(placeholder_widget(), move |artist: &Artist, _| {
+        artist.image(size, size).map(|image| image.url.clone())
+    })
+    .fix_size(size, size)
+    .clip(Size::new(size, size).to_rounded_rect(4.0))
+}
+
+pub fn artist_info_widget() -> impl Widget<Artist> {
+    let artist_image = rounded_cover_widget(theme::grid(10.0));
+    let artist_label = Flex::column()
+        .cross_axis_alignment(CrossAxisAlignment::Start)
+        .with_child(
+            Label::raw()
+                .with_text_size(theme::TEXT_SIZE_LARGE)
+                .with_font(theme::UI_FONT_BOLD)
+                .lens(Artist::name),
+        )
+        .with_default_spacer()
+        .with_child(
+            Label::dynamic(|followers: &ArtistFollowerCount, _| {
+                format!("{} followers", followers.total)
+            })
+            .with_text_size(theme::TEXT_SIZE_SMALL)
+            .lens(Artist::followers),
+        );
+    let artist = Flex::row()
+        .must_fill_main_axis(true)
+        .with_spacer(theme::grid(1.0))
+        .with_child(artist_image)
+        .with_spacer(theme::grid(1.0))
+        .with_flex_child(artist_label, 1.0);
+    artist
+        .padding(theme::grid(0.5))
+        .context_menu(|artist| artist_menu(&artist.link()))
+}
+
+fn async_artist_info_widget() -> impl Widget<AppState> {
+    Async::new(spinner_widget, artist_info_widget, error_widget)
+        .lens(AppState::artist_detail.then(ArtistDetail::artist))
+        .on_command_async(
+            LOAD_DETAIL,
+            |d| WebApi::global().get_artist(&d.id),
+            |_, data, d| data.artist_detail.artist.defer(d),
+            |_, data, (d, r)| data.artist_detail.artist.update((d, r)),
+        )
 }
 
 fn async_top_tracks_widget() -> impl Widget<AppState> {
@@ -123,12 +173,15 @@ pub fn cover_widget(size: f64) -> impl Widget<Artist> {
 }
 
 fn top_tracks_widget() -> impl Widget<WithCtx<ArtistTracks>> {
-    tracklist_widget(TrackDisplay {
-        title: true,
-        album: true,
-        popularity: true,
-        ..TrackDisplay::empty()
-    })
+    Flex::column()
+        .cross_axis_alignment(CrossAxisAlignment::Start)
+        .with_child(header_widget("Top Tracks"))
+        .with_child(tracklist_widget(TrackDisplay {
+            title: true,
+            album: true,
+            popularity: true,
+            ..TrackDisplay::empty()
+        }))
 }
 
 fn albums_widget() -> impl Widget<WithCtx<ArtistAlbums>> {

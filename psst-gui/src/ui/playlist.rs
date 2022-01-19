@@ -1,13 +1,14 @@
 use druid::{
-    widget::{CrossAxisAlignment, Flex, Label, LineBreaking, List},
+    kurbo::Arc,
+    widget::{CrossAxisAlignment, Flex, Label, LineBreaking, List, MainAxisAlignment, RawLabel},
     Insets, LensExt, LocalizedString, Menu, MenuItem, Selector, Size, Widget, WidgetExt,
 };
 
 use crate::{
     cmd,
     data::{
-        AppState, Ctx, Library, Nav, Playlist, PlaylistAddTrack, PlaylistDetail, PlaylistLink,
-        PlaylistTracks,
+        AppState, Cached, Ctx, Library, Nav, Playlist, PlaylistAddTrack, PlaylistDetail,
+        PlaylistLink, PlaylistTracks, PublicUser, WithCtx,
     },
     error::Error,
     webapi::WebApi,
@@ -123,7 +124,44 @@ fn rounded_cover_widget(size: f64) -> impl Widget<Playlist> {
     cover_widget(size).clip(Size::new(size, size).to_rounded_rect(4.0))
 }
 
+pub fn playlist_info_widget() -> impl Widget<Playlist> {
+    let playlist_cover = rounded_cover_widget(theme::grid(10.0));
+
+    let playlist_info = Flex::column()
+        .cross_axis_alignment(CrossAxisAlignment::Start)
+        .with_child(RawLabel::new().lens(Playlist::name))
+        .with_default_spacer()
+        .with_child(
+            Label::dynamic(|song_count: &usize, _| format!("{} songs", song_count))
+                .lens(Playlist::track_count),
+        )
+        .with_default_spacer()
+        .with_child(RawLabel::new().lens(Playlist::owner.then(PublicUser::display_name)));
+
+    Flex::row()
+        .cross_axis_alignment(CrossAxisAlignment::Center)
+        .with_child(playlist_cover)
+        .with_default_spacer()
+        .with_flex_child(playlist_info, 1.0)
+}
+fn async_playlist_info_widget() -> impl Widget<AppState> {
+    Async::new(spinner_widget, playlist_info_widget, error_widget)
+        .lens(AppState::playlist_detail.then(PlaylistDetail::playlist))
+        .on_command_async(
+            LOAD_DETAIL,
+            |d| WebApi::global().get_playlist(&d.id),
+            |_, data, d| data.playlist_detail.playlist.defer(d),
+            |_, data, (d, r)| data.playlist_detail.playlist.update((d, r)),
+        )
+}
 pub fn detail_widget() -> impl Widget<AppState> {
+    Flex::column()
+        .with_child(async_playlist_info_widget())
+        .with_default_spacer()
+        .with_child(async_playlist_tracks_widget())
+}
+
+pub fn async_playlist_tracks_widget() -> impl Widget<AppState> {
     Async::new(
         spinner_widget,
         || {

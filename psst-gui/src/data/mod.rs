@@ -33,7 +33,7 @@ use psst_core::session::SessionService;
 
 pub use crate::data::{
     album::{Album, AlbumDetail, AlbumLink, AlbumType, Copyright, CopyrightType},
-    artist::{Artist, ArtistAlbums, ArtistDetail, ArtistLink, ArtistTracks},
+    artist::{Artist, ArtistAlbums, ArtistDetail, ArtistFollowerCount, ArtistLink, ArtistTracks},
     config::{AudioQuality, Authentication, Config, Preferences, PreferencesTab, Theme},
     ctx::Ctx,
     find::{FindQuery, Finder, MatchFindQuery},
@@ -51,7 +51,7 @@ pub use crate::data::{
     search::{Search, SearchResults, SearchTopic},
     slider_scroll_scale::SliderScrollScale,
     track::{AudioAnalysis, AudioSegment, TimeInterval, Track, TrackId},
-    user::UserProfile,
+    user::{PublicUser, UserProfile},
     utils::{Cached, Float64, Image, Page},
 };
 
