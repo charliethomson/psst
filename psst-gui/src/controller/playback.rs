@@ -7,7 +7,7 @@ use crossbeam_channel::Sender;
 use druid::{
     im::Vector,
     widget::{prelude::*, Controller},
-    Code, ExtEventSink, InternalLifeCycle, KbKey, WindowHandle,
+    Code, ExtEventSink, HotKey, InternalLifeCycle, KbKey, SysMods, WindowHandle,
 };
 use psst_core::{
     audio::{normalize::NormalizationLevel, output::AudioOutput},
@@ -391,16 +391,24 @@ where
                 self.pause_or_resume();
                 ctx.set_handled();
             }
-            Event::KeyDown(key) if key.code == Code::ArrowRight => {
+            Event::KeyDown(k_e) if HotKey::new(SysMods::Cmd, KbKey::ArrowRight).matches(k_e) => {
                 self.next();
                 ctx.set_handled();
             }
-            Event::KeyDown(key) if key.code == Code::ArrowLeft => {
+            Event::KeyDown(k_e) if HotKey::new(SysMods::Cmd, KbKey::ArrowLeft).matches(k_e) => {
                 self.previous();
+                ctx.set_handled();
+            }
+            Event::KeyDown(k_e) if HotKey::new(SysMods::Cmd, KbKey::ArrowUp).matches(k_e) => {
+                data.playback.volume = (data.playback.volume + 0.05).min(1.0);
                 ctx.set_handled();
             }
             Event::KeyDown(key) if key.key == KbKey::Character("+".to_string()) => {
                 data.playback.volume = (data.playback.volume + 0.1).min(1.0);
+                ctx.set_handled();
+            }
+            Event::KeyDown(k_e) if HotKey::new(SysMods::Cmd, KbKey::ArrowDown).matches(k_e) => {
+                data.playback.volume = (data.playback.volume - 0.05).max(0.0);
                 ctx.set_handled();
             }
             Event::KeyDown(key) if key.key == KbKey::Character("-".to_string()) => {
