@@ -80,8 +80,25 @@ where
                 ctx.set_handled();
                 self.load_route_data(ctx, data);
             }
-            Event::MouseDown(cmd) if cmd.button.is_x1() => {
-                data.navigate_back();
+            Event::Command(cmd) if cmd.is(cmd::NAVIGATE_FORWARD) => {
+                let count = cmd.get_unchecked(cmd::NAVIGATE_FORWARD);
+                for _ in 0..*count {
+                    data.navigate_forward();
+                }
+                ctx.set_handled();
+                self.load_route_data(ctx, data);
+            }
+            Event::MouseDown(cmd) => {
+                // TODO: There's probably a cleaner & more DRY way to do this
+                if cmd.button.is_x1() {
+                    data.navigate_back();
+                } else if cmd.button.is_x2() {
+                    data.navigate_forward();
+                } else {
+                    child.event(ctx, event, data, env);
+                    return;
+                }
+
                 ctx.set_handled();
                 self.load_route_data(ctx, data);
             }
