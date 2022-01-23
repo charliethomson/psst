@@ -3,6 +3,7 @@ mod artist;
 pub mod config;
 mod ctx;
 mod find;
+mod history;
 mod id;
 mod nav;
 mod playback;
@@ -17,7 +18,6 @@ pub mod utils;
 
 use std::{
     fmt::Display,
-    mem,
     sync::{
         atomic::{AtomicUsize, Ordering},
         Arc,
@@ -37,6 +37,7 @@ pub use crate::data::{
     config::{AudioQuality, Authentication, Config, Preferences, PreferencesTab, Theme},
     ctx::Ctx,
     find::{FindQuery, Finder, MatchFindQuery},
+    history::History,
     nav::{Nav, Route, SpotifyUrl},
     playback::{
         NowPlaying, Playback, PlaybackOrigin, PlaybackPayload, PlaybackState, QueueBehavior,
@@ -61,7 +62,7 @@ pub struct AppState {
     pub session: SessionService,
 
     pub nav: Nav,
-    pub history: Vector<Nav>,
+    pub history: History,
     pub config: Config,
     pub preferences: Preferences,
     pub playback: Playback,
@@ -99,7 +100,7 @@ impl AppState {
         Self {
             session: SessionService::empty(),
             nav: Nav::Home,
-            history: Vector::new(),
+            history: History::new(),
             config,
             preferences: Preferences {
                 active: PreferencesTab::General,
@@ -144,20 +145,26 @@ impl AppState {
 }
 
 impl AppState {
-    pub fn navigate(&mut self, nav: &Nav) {
-        if &self.nav != nav {
-            let previous = mem::replace(&mut self.nav, nav.to_owned());
-            self.history.push_back(previous);
-            self.config.last_route.replace(nav.to_owned());
-            self.config.save();
+    fn _navigate(&mut self, navigate_to: Nav) {
+        self.config.last_route.replace(navigate_to.clone());
+        self.config.save();
+        self.nav = navigate_to;
+    }
+
+    pub fn navigate<'a>(&mut self, nav: &'a Nav) {
+        if let Some(navigate_to) = self.history.navigate(&self.nav, nav) {
+            self._navigate(navigate_to)
         }
     }
 
     pub fn navigate_back(&mut self) {
-        if let Some(nav) = self.history.pop_back() {
-            self.config.last_route.replace(nav.clone());
-            self.config.save();
-            self.nav = nav;
+        if let Some(navigate_to) = self.history.navigate_back() {
+            self._navigate(navigate_to)
+        }
+    }
+    pub fn navigate_forward(&mut self) {
+        if let Some(navigate_to) = self.history.navigate_forward() {
+            self._navigate(navigate_to)
         }
     }
 }

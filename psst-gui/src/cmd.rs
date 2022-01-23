@@ -30,6 +30,7 @@ pub const SESSION_CONNECT: Selector = Selector::new("app.session-connect");
 
 pub const NAVIGATE: Selector<Nav> = Selector::new("app.navigates");
 pub const NAVIGATE_BACK: Selector<usize> = Selector::new("app.navigate-back");
+pub const NAVIGATE_FORWARD: Selector<usize> = Selector::new("app.navigate-forward");
 
 // Playback state
 

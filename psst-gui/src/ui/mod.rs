@@ -10,7 +10,7 @@ use druid::{
 use crate::{
     cmd,
     controller::{AfterDelay, NavController, SessionController},
-    data::{Alert, AlertStyle, AppState, Nav, Playback, PlaylistDetail, Route},
+    data::{Alert, AlertStyle, AppState, History, Nav, Playback, PlaylistDetail, Route},
     widget::{
         icons, icons::SvgIcon, Border, Empty, MyWidgetExt, Overlay, ThemeScope, ViewDispatcher,
     },
@@ -124,6 +124,7 @@ fn root_widget() -> impl Widget<AppState> {
     let topbar = Flex::row()
         .must_fill_main_axis(true)
         .with_child(topbar_back_button_widget())
+        .with_child(topbar_forward_button_widget())
         .with_child(topbar_title_widget())
         .background(Border::Bottom.with_color(theme::BACKGROUND_DARK));
 
@@ -342,25 +343,75 @@ fn topbar_back_button_widget() -> impl Widget<AppState> {
         .on_click(|ctx, _, _| {
             ctx.submit_command(cmd::NAVIGATE_BACK.with(1));
         })
-        .context_menu(history_menu);
+        .context_menu(history_menu_back);
     Either::new(
-        |history: &Vector<Nav>, _| history.is_empty(),
-        disabled,
+        |history: &History, _| history.can_navigate_back(),
         enabled,
+        disabled,
     )
     .padding(theme::grid(1.0))
     .lens(AppState::history)
 }
 
-fn history_menu(history: &Vector<Nav>) -> Menu<AppState> {
+fn topbar_forward_button_widget() -> impl Widget<AppState> {
+    let icon = icons::FORWARD.scale((10.0, theme::grid(2.0)));
+    let disabled = icon
+        .clone()
+        .with_color(theme::GREY_600)
+        .padding(theme::grid(1.0));
+    let enabled = icon
+        .padding(theme::grid(1.0))
+        .link()
+        .rounded(theme::BUTTON_BORDER_RADIUS)
+        .on_click(|ctx, _, _| {
+            ctx.submit_command(cmd::NAVIGATE_FORWARD.with(1));
+        })
+        .context_menu(history_menu_forward);
+    Either::new(
+        |history: &History, _| history.can_navigate_forward(),
+        enabled,
+        disabled,
+    )
+    .padding(theme::grid(1.0))
+    .lens(AppState::history)
+}
+
+// TODO: I'd like to be able to merge this and `history_menu_back`, not sure how tho :/
+fn history_menu_back(history: &History) -> Menu<AppState> {
     let mut menu = Menu::empty();
 
-    for (index, history) in history.iter().rev().take(10).enumerate() {
+    for (index, entry) in history
+        .history
+        .iter()
+        .rev()
+        .skip(history.history.len() - history.index)
+        .take(10)
+        .enumerate()
+    {
         let skip_back_in_history_n_times = index + 1;
         menu = menu.entry(
-            MenuItem::new(history.full_title())
+            MenuItem::new(entry.full_title())
                 .command(cmd::NAVIGATE_BACK.with(skip_back_in_history_n_times)),
         );
+    }
+
+    menu
+}
+fn history_menu_forward(history: &History) -> Menu<AppState> {
+    let mut menu = Menu::empty();
+
+    for (index, entry) in history
+        .history
+        .iter()
+        .skip(history.index + 1)
+        .take(10)
+        .enumerate()
+    {
+        let skip_forward_in_history_n_times = index + 1;
+        menu = menu.entry(
+            MenuItem::new(entry.full_title())
+                .command(cmd::NAVIGATE_FORWARD.with(skip_forward_in_history_n_times)),
+        )
     }
 
     menu
