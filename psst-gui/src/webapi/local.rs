@@ -137,7 +137,7 @@ impl LocalTrackManager {
         for parsed_track in matching_tracks {
             if Self::is_matching_in_addition_to_title(parsed_track, &local_track) {
                 return Some(Arc::new(Track {
-                    id: TrackId::INVALID,
+                    id: TrackId::default(),
                     name: local_track.name,
                     album: local_track.album.map(|local_album| {
                         AlbumLink {
@@ -206,7 +206,7 @@ struct LocalArtistLinkJson {
     pub name: Arc<str>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Deserialize)]
 struct LocalTrackJson {
     #[serde(default)]
     pub id: Option<TrackId>,
