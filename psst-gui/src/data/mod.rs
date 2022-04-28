@@ -11,8 +11,8 @@ mod playlist;
 mod promise;
 mod recommend;
 mod search;
-mod slider_scroll_scale;
 mod show;
+mod slider_scroll_scale;
 mod track;
 mod user;
 pub mod utils;
@@ -51,11 +51,8 @@ pub use crate::data::{
         RecommendationsRequest, Toggled,
     },
     search::{Search, SearchResults, SearchTopic},
-<<<<<<< HEAD
-    slider_scroll_scale::SliderScrollScale,
-=======
     show::{Episode, EpisodeId, EpisodeLink, Show, ShowDetail, ShowEpisodes, ShowLink},
->>>>>>> 2d2cf6511da401b7e8e6e3c16b9386b9fb8f6c92
+    slider_scroll_scale::SliderScrollScale,
     track::{AudioAnalysis, AudioSegment, TimeInterval, Track, TrackId},
     user::{PublicUser, UserProfile},
     utils::{Cached, Float64, Image, Page},
