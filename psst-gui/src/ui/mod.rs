@@ -10,7 +10,7 @@ use druid::{
 use crate::{
     cmd,
     controller::{AfterDelay, NavController, SessionController},
-    data::{Alert, AlertStyle, AppState, History, Nav, Playback, PlaylistDetail, Route},
+    data::{Alert, AlertStyle, AppState, History, Nav, Playable, Playback, PlaylistDetail, Route},
     widget::{
         icons, icons::SvgIcon, Border, Empty, MyWidgetExt, Overlay, ThemeScope, ViewDispatcher,
     },

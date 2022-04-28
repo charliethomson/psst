@@ -17,7 +17,10 @@ use crate::{
     widget::{Async, MyWidgetExt, RemoteImage},
 };
 
-use super::{album, playable, theme, track, utils};
+use super::{
+    album, playable, theme, track,
+    utils::{self, error_widget, placeholder_widget, spinner_widget},
+};
 
 pub const LOAD_DETAIL: Selector<ArtistLink> = Selector::new("app.artist.load-detail");
 
